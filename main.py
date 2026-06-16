@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF
@@ -7,19 +7,14 @@ import numpy as np
 
 app = FastAPI()
 
-# ★ CORS 설정을 더 강력하게 변경했습니다 ★
+# ★ 브라우저 충돌을 일으키던 설정을 완벽하게 수정한 버전입니다 ★
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # 모든 도메인 허용
+    allow_origins=["https://mokdongalbam.github.io"], # 회원님의 깃허브 사이트만 딱 지정해서 허용 (가장 안전하고 확실함)
     allow_credentials=True,
-    allow_methods=["*"], # GET, POST, OPTIONS 등 모든 메소드 허용
-    allow_headers=["*"], # 모든 헤더 허용
+    allow_methods=["*"], 
+    allow_headers=["*"], 
 )
-
-# 옵션 요청 처리를 명시적으로 추가 (CORS 에러 방지)
-@app.options("/api/deskew")
-async def options_deskew():
-    return JSONResponse(content="OK")
 
 def calculate_skew_angle(image: np.ndarray) -> float:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -88,10 +83,9 @@ async def process_pdf(file: UploadFile = File(...)):
             content=final_pdf_bytes, 
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f"attachment; filename=deskewed.pdf",
-                "Access-Control-Allow-Origin": "*" # 명시적 헤더 추가
+                "Content-Disposition": f"attachment; filename=deskewed.pdf"
             }
         )
     except Exception as e:
-        print("Error processing PDF:", str(e))
-        return JSONResponse(status_code=500, content={"message": "Internal Server Error", "details": str(e)})
+        print("Error:", str(e))
+        return JSONResponse(status_code=500, content={"message": "서버 에러 발생", "details": str(e)})
